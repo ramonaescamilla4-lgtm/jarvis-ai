@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#ffffff">
+<title>J.A.R.V.I.S. AI</title>
+<style>
+:root{color-scheme:light;--bg:#fff;--panel:#fff;--soft:#f7f7f8;--text:#202123;--muted:#6b7280;--line:#e5e7eb;--blue:#1687d9;--blue-soft:#eaf5ff;--user:#f3f4f6}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+button,input,textarea{font:inherit}
+button{cursor:pointer}
+.app{height:100dvh;display:flex;flex-direction:column;background:#fff}
+.topbar{height:64px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 20px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.96)}
+.brand{display:flex;align-items:center;gap:11px;min-width:0}
+.logo{width:36px;height:36px;border-radius:12px;background:var(--blue-soft);color:var(--blue);display:grid;place-items:center;font-size:20px;font-weight:800}
+.brand-title{font-weight:700;font-size:16px;letter-spacing:-.3px}
+.brand-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.top-actions{display:flex;gap:8px}
+.icon-btn,.subtle-btn{border:1px solid var(--line);background:white;color:#374151;border-radius:10px;padding:8px 11px}
+.icon-btn{width:40px;height:40px;padding:0;font-size:18px}
+.icon-btn:hover,.subtle-btn:hover{background:var(--soft)}
+.status{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:7px;margin-right:8px}
+.dot{width:7px;height:7px;background:#9ca3af;border-radius:50%}
+.dot.connected{background:#16a34a}
+.workspace{flex:1;min-height:0;display:flex;justify-content:center;overflow:hidden}
+.chat-shell{width:100%;max-width:900px;display:flex;flex-direction:column;min-height:0}
+.messages{flex:1;min-height:0;overflow:auto;padding:28px 22px 20px;display:flex;flex-direction:column;gap:22px;scroll-behavior:smooth}
+.welcome{margin:auto;max-width:600px;text-align:center;padding:28px 12px}
+.welcome-mark{width:58px;height:58px;margin:0 auto 18px;border-radius:20px;background:var(--blue-soft);color:var(--blue);display:grid;place-items:center;font-size:28px}
+.welcome h1{font-size:clamp(25px,4vw,34px);letter-spacing:-1px;margin:0 0 10px;font-weight:650}
+.welcome p{margin:0;color:var(--muted);font-size:15px}
+.suggestions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:26px;text-align:left}
+.suggestion{border:1px solid var(--line);border-radius:14px;background:white;padding:14px;color:#374151;line-height:1.35}
+.suggestion:hover{background:#f9fafb;border-color:#bfdbfe}
+.suggestion strong{display:block;font-size:14px;margin-bottom:4px}
+.suggestion span{font-size:12px;color:var(--muted)}
+.message{max-width:100%;display:flex;gap:12px;align-items:flex-start}
+.avatar{width:30px;height:30px;flex:0 0 30px;border-radius:50%;display:grid;place-items:center;font-size:14px;font-weight:700}
+.assistant .avatar{background:var(--blue-soft);color:var(--blue)}
+.user .avatar{background:#e5e7eb;color:#374151}
+.message-content{min-width:0;flex:1;padding-top:3px;line-height:1.65;font-size:15px;overflow-wrap:anywhere}
+.message-content p{margin:0 0 10px;white-space:pre-wrap}
+.message-content p:last-child{margin-bottom:0}
+.message-content pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f3f4f6;padding:12px;border-radius:10px}
+.message-tools{display:flex;gap:8px;margin-top:8px}
+.mini-btn{border:0;background:transparent;color:#6b7280;padding:4px 6px;border-radius:6px;font-size:12px}
+.mini-btn:hover{background:#f3f4f6;color:#202123}
+.composer-wrap{padding:10px 20px max(14px,env(safe-area-inset-bottom));background:linear-gradient(180deg,rgba(255,255,255,0),#fff 20%)}
+.composer{border:1px solid #d1d5db;border-radius:22px;padding:10px 12px 8px;box-shadow:0 4px 18px rgba(15,23,42,.06);background:white}
+.composer:focus-within{border-color:#93c5fd;box-shadow:0 0 0 3px rgba(59,130,246,.09)}
+#userInput{display:block;width:100%;border:0;outline:0;resize:none;max-height:180px;min-height:32px;padding:5px 4px;background:transparent;color:var(--text);line-height:1.5;font-size:15px}
+#userInput::placeholder{color:#9ca3af}
+.composer-bottom{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.helper{font-size:11px;color:#9ca3af;padding-left:4px}
+.send-btn{border:0;border-radius:13px;width:38px;height:38px;background:var(--blue);color:white;font-size:18px}
+.send-btn:hover{background:#0876c5}
+.send-btn:disabled{opacity:.45;cursor:not-allowed}
+.footnote{text-align:center;color:#9ca3af;font-size:11px;padding:7px 12px 0}
+.hidden{display:none!important}
+.modal-backdrop{position:fixed;inset:0;background:rgba(17,24,39,.28);display:grid;place-items:center;padding:18px;z-index:10}
+.modal{width:min(100%,460px);background:white;border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.15)}
+.modal h2{font-size:20px;margin:0 0 8px}
+.modal p{font-size:13px;line-height:1.55;color:var(--muted)}
+.modal label{display:block;font-size:13px;font-weight:600;margin:14px 0 6px}
+.modal input{width:100%;border:1px solid #d1d5db;border-radius:10px;padding:11px 12px;outline:none}
+.modal input:focus{border-color:#60a5fa}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+.primary-btn{background:var(--blue);color:white;border:0;border-radius:10px;padding:10px 14px;font-weight:600}
+.danger-link{border:0;background:transparent;color:#b91c1c;font-size:12px;padding:0}
+@media(max-width:600px){.topbar{height:58px;padding:0 12px}.brand-sub{display:none}.status{font-size:11px;margin-right:0}.messages{padding:22px 15px 16px;gap:20px}.composer-wrap{padding-left:12px;padding-right:12px}.suggestions{grid-template-columns:1fr}.welcome{padding:20px 4px}.message-content{font-size:14px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">J</div>
+      <div><div class="brand-title">J.A.R.V.I.S. AI</div><div class="brand-sub">Asistente inteligente personal</div></div>
+    </div>
+    <div class="top-actions">
+      <div class="status"><span id="statusDot" class="dot"></span><span id="statusText">IA sin configurar</span></div>
+      <button class="icon-btn" id="newChatBtn" title="Nuevo chat" aria-label="Nuevo chat">＋</button>
+      <button class="icon-btn" id="settingsBtn" title="Configurar IA" aria-label="Configurar IA">⚙</button>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <section class="chat-shell">
+      <div id="messages" class="messages" aria-live="polite">
+        <div id="welcome" class="welcome">
+          <div class="welcome-mark">✦</div>
+          <h1>Hola, soy J.A.R.V.I.S.</h1>
+          <p>¿Qué necesitas resolver hoy?</p>
+          <div class="suggestions">
+            <button class="suggestion" data-prompt="Resuelve este problema de matemáticas paso a paso: "><strong>📐 Matemáticas</strong><span>Operaciones, ecuaciones y problemas explicados</span></button>
+            <button class="suggestion" data-prompt="Explícame este tema de forma sencilla, con ejemplos: "><strong>📚 Aprender algo</strong><span>Explicaciones para estudiar y comprender</span></button>
+            <button class="suggestion" data-prompt="Ayúdame a resolver este problema paso a paso: "><strong>💡 Resolver un problema</strong><span>Analiza opciones y recomienda una solución</span></button>
+            <button class="suggestion" data-prompt="Ayúdame a escribir o mejorar este código: "><strong>💻 Programación</strong><span>Crear, revisar y corregir código</span></button>
+          </div>
+        </div>
+      </div>
+      <div class="composer-wrap">
+        <form id="chatForm" class="composer">
+          <textarea id="userInput" rows="1" placeholder="Pregunta lo que quieras..." autocomplete="off" required></textarea>
+          <div class="composer-bottom">
+            <span class="helper">J.A.R.V.I.S. · Matemáticas, estudio y mucho más</span>
+            <div style="display:flex;gap:7px;align-items:center">
+              <button id="sendBtn" class="send-btn" type="submit" aria-label="Enviar mensaje">↑</button>
+            </div>
+          </div>
+        </form>
+        <div id="memoryNotice" class="footnote hidden" role="status"></div>
+        <div class="footnote">Comprueba los resultados importantes. La IA puede equivocarse.</div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="settingsModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+  <div class="modal">
+    <h2 id="settingsTitle">Conectar J.A.R.V.I.S.</h2>
+    <p>Para responder de verdad necesitas una clave de Gemini API. Puedes obtenerla en Google AI Studio. Esta versión de archivo único guarda la clave solo en este navegador; no publiques el HTML con tu clave. Para una app pública conviene usar un backend seguro.</p>
+    <label for="apiKeyInput">Clave de Gemini API</label>
+    <input id="apiKeyInput" type="password" placeholder="Pega tu clave aquí" autocomplete="off">
+    <label for="modelInput">Modelo</label>
+    <input id="modelInput" type="text" value="gemini-3.8-flash" autocomplete="off">
+    <div class="modal-actions">
+      <button id="clearKeyBtn" class="subtle-btn" type="button">Borrar clave</button>
+      <button id="cancelSettingsBtn" class="subtle-btn" type="button">Cancelar</button>
+      <button id="saveSettingsBtn" class="primary-btn" type="button">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const messagesEl = $('messages');
+  const welcomeEl = $('welcome');
+  const inputEl = $('userInput');
+  const sendBtn = $('sendBtn');
+  const modal = $('settingsModal');
+  const HISTORY_KEY = 'jarvis_conversation_history_v1';
+  let history = [];
+  let busy = false;
+
+  function saveHistory() {
+    try {
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+      return true;
+    } catch (err) {
+      console.warn('No se pudo guardar el historial de J.A.R.V.I.S.', err);
+      voiceStatusSafeNotice('Chrome no permite guardar la memoria en este modo. Para conservarla, abre J.A.R.V.I.S. desde una página HTTPS.');
+      return false;
+    }
+  }
+
+  function voiceStatusSafeNotice(message) {
+    // La versión sin voz muestra avisos dentro del chat, sin depender del micrófono.
+    const notice = $('memoryNotice');
+    if (notice) { notice.textContent = message; notice.classList.remove('hidden'); }
+  }
+
+  function loadHistory() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+      if (!Array.isArray(saved)) return [];
+      return saved.filter(item =>
+        item && (item.role === 'user' || item.role === 'model') &&
+        Array.isArray(item.parts) && item.parts.some(part => typeof part.text === 'string')
+      );
+    } catch { return []; }
+  }
+
+
+  const savedKey = () => localStorage.getItem('jarvis_gemini_api_key') || '';
+  const savedModel = () => localStorage.getItem('jarvis_gemini_model') || 'gemini-3.8-flash';
+
+  function updateStatus(connected) {
+    $('statusDot').classList.toggle('connected', connected);
+    $('statusText').textContent = connected ? 'Clave configurada' : 'IA sin configurar';
+  }
+  function openSettings() {
+    $('apiKeyInput').value = savedKey();
+    $('modelInput').value = savedModel();
+    modal.classList.remove('hidden');
+    $('apiKeyInput').focus();
+  }
+  function closeSettings() { modal.classList.add('hidden'); }
+  $('settingsBtn').addEventListener('click', openSettings);
+  $('cancelSettingsBtn').addEventListener('click', closeSettings);
+  $('saveSettingsBtn').addEventListener('click', () => {
+    const key = $('apiKeyInput').value.trim();
+    const model = $('modelInput').value.trim() || 'gemini-3.8-flash';
+    if (key) localStorage.setItem('jarvis_gemini_api_key', key);
+    else localStorage.removeItem('jarvis_gemini_api_key');
+    localStorage.setItem('jarvis_gemini_model', model);
+    updateStatus(Boolean(key));
+    closeSettings();
+    if (!key) addMessage('assistant', 'Todavía no hay una clave de Gemini configurada. Pulsa ⚙ para conectarla y poder responder con una IA real.');
+  });
+  $('clearKeyBtn').addEventListener('click', () => {
+    localStorage.removeItem('jarvis_gemini_api_key');
+    $('apiKeyInput').value = '';
+    updateStatus(false);
+  });
+  modal.addEventListener('click', e => { if (e.target === modal) closeSettings(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSettings(); });
+
+  function scrollBottom() { messagesEl.scrollTop = messagesEl.scrollHeight; }
+  function hideWelcome() { if (welcomeEl) welcomeEl.classList.add('hidden'); }
+  function addMessage(role, text, loading = false) {
+    hideWelcome();
+    const row = document.createElement('div');
+    row.className = 'message ' + (role === 'user' ? 'user' : 'assistant');
+    const avatar = document.createElement('div');
+    avatar.className = 'avatar';
+    avatar.textContent = role === 'user' ? 'Tú' : 'J';
+    const body = document.createElement('div');
+    body.className = 'message-content';
+    const paragraph = document.createElement('p');
+    paragraph.textContent = text;
+    body.appendChild(paragraph);
+    if (loading) row.dataset.loading = 'true';
+    row.append(avatar, body);
+    messagesEl.appendChild(row);
+    scrollBottom();
+    return row;
+  }
+  function addAssistantAnswer(text) {
+    const row = addMessage('assistant', text);
+    const tools = document.createElement('div');
+    tools.className = 'message-tools';
+    const copy = document.createElement('button');
+    copy.className = 'mini-btn';
+    copy.textContent = 'Copiar respuesta';
+    copy.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(text);
+        copy.textContent = 'Copiado';
+        setTimeout(() => copy.textContent = 'Copiar respuesta', 1300);
+      } catch { copy.textContent = 'No se pudo copiar'; }
+    });
+    tools.appendChild(copy);
+    row.querySelector('.message-content').appendChild(tools);
+  }
+  function newChat() {
+    history = [];
+    try { localStorage.removeItem(HISTORY_KEY); } catch (err) { console.warn('No se pudo borrar el historial guardado.', err); }
+    messagesEl.querySelectorAll('.message').forEach(el => el.remove());
+    welcomeEl.classList.remove('hidden');
+    inputEl.value = '';
+    inputEl.focus();
+  }
+  $('newChatBtn').addEventListener('click', newChat);
+  document.querySelectorAll('[data-prompt]').forEach(button => {
+    button.addEventListener('click', () => {
+      inputEl.value = button.dataset.prompt;
+      inputEl.focus();
+      inputEl.setSelectionRange(inputEl.value.length, inputEl.value.length);
+    });
+  });
+  inputEl.addEventListener('input', () => {
+    inputEl.style.height = 'auto';
+    inputEl.style.height = Math.min(inputEl.scrollHeight, 180) + 'px';
+  });
+  inputEl.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      $('chatForm').requestSubmit();
+    }
+  });
+
+  async function askGemini(userText) {
+    const apiKey = savedKey();
+    const model = savedModel();
+    if (!apiKey) {
+      addAssistantAnswer('Aún no estoy conectado a Gemini. Pulsa el botón ⚙ de arriba, introduce tu clave de Gemini API y guarda la configuración. Después podré ayudarte con matemáticas, tareas, explicaciones, programación y otros temas.');
+      return;
+    }
+    const systemPrompt = `Eres J.A.R.V.I.S., un asistente inteligente, amable, claro y competente. Responde en español salvo que el usuario pida otro idioma. Puedes ayudar con matemáticas, tareas escolares, ciencias, historia, escritura, programación y preguntas generales. En matemáticas, muestra el procedimiento paso a paso, explica las operaciones y comprueba el resultado cuando sea posible. Adapta la explicación al nivel del usuario y pregunta si falta información. No inventes datos ni afirmes haber realizado acciones externas. Si no estás seguro, dilo con honestidad. Sé natural y útil, no llames "señor" al usuario en cada respuesta.`;
+    const contents = [...history, {role:'user', parts:[{text:userText}]}];
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+    const response = await fetch(endpoint, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        systemInstruction:{parts:[{text:systemPrompt}]},
+        contents,
+        generationConfig:{temperature:0.4, maxOutputTokens:4096}
+      })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const detail = data?.error?.message || `Error HTTP ${response.status}`;
+      throw new Error(detail);
+    }
+    const answer = data?.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('').trim();
+    if (!answer) throw new Error('Gemini no devolvió una respuesta. Revisa el modelo y la configuración de tu API.');
+    history.push({role:'user',parts:[{text:userText}]});
+    history.push({role:'model',parts:[{text:answer}]});
+    saveHistory();
+    return answer;
+  }
+
+  $('chatForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const text = inputEl.value.trim();
+    if (!text || busy) return;
+    addMessage('user', text);
+    inputEl.value = '';
+    inputEl.style.height = 'auto';
+    busy = true;
+    sendBtn.disabled = true;
+    const pending = addMessage('assistant', 'Estoy pensando…', true);
+    try {
+      const answer = await askGemini(text);
+      pending.remove();
+      if (answer) addAssistantAnswer(answer);
+    } catch (err) {
+      pending.remove();
+      console.error(err);
+      let message = 'No pude obtener una respuesta de Gemini.';
+      if (/API_KEY_INVALID|API key not valid|invalid api key/i.test(err.message)) message = 'La clave de API no parece válida. Revisa la clave en ⚙ y vuelve a intentarlo.';
+      else if (/not found|not supported/i.test(err.message)) message = 'El modelo configurado no está disponible para esta API. Abre ⚙ y prueba con un modelo compatible con tu clave de Gemini.';
+      else message += ' Detalle: ' + err.message;
+      addAssistantAnswer(message);
+    } finally {
+      busy = false;
+      sendBtn.disabled = false;
+      inputEl.focus();
+    }
+  });
+
+  updateStatus(Boolean(savedKey()));
+
+  // Restaurar la conversación guardada al abrir o recargar J.A.R.V.I.S.
+  history = loadHistory();
+  if (history.length) {
+    hideWelcome();
+    for (const item of history) {
+      const text = item.parts.map(part => part.text || '').join('').trim();
+      if (!text) continue;
+      if (item.role === 'user') addMessage('user', text);
+      else addAssistantAnswer(text);
+    }
+  }
+})();
+</script>
+</body>
+</html>
